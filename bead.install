@@ -1,0 +1,939 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function bead_schema() {
+  /**
+   * Project types.
+   */
+  $schema['bead_project_type'] = [
+    'description' => 'Stores project type information.',
+    'fields' => [
+      'project_type_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary key: Unique id for a project type.',
+      ],
+      'name' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The name of the project type.',
+      ],
+    ],
+    'primary key' => ['project_type_id'],
+    'indexes' => [
+      'name' => ['name'],
+    ],
+  ];
+
+  /**
+   * Project
+   */
+  $schema['bead_project'] = [
+    'description' => 'Stores projects.',
+    'fields' => [
+      'project_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Unique id for a project.',
+      ],
+      'project_type_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A project_type_id',
+      ],
+      'name' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The name of the project.',
+      ],
+      'directory' => [
+        'type' => 'varchar',
+        'length' => 1024,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The root directory of the project.',
+      ],
+    ],
+    'primary key' => ['project_id'],
+    'indexes' => [
+      'project_type_id' => ['project_type_id'],
+      'project_id_project_type_id' => ['project_id', 'project_type_id'],
+      'project_id_directory' => ['project_id', 'directory'],
+    ],
+  ];
+
+  $schema['bead_directories'] = [
+    'description' => 'Contains the directories for a project.',
+    'fields' => [
+      'directory_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Unique id for a directory.',
+      ],
+      'project_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A project_id',
+      ],
+      'directory' => [
+        'type' => 'varchar',
+        'length' => 1024,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'A relative directory to the root directory of the project.',
+      ],
+    ],
+    'primary key' => ['directory_id'],
+    'indexes' => [
+      'directory_id_project_id' => ['directory_id', 'project_id'],
+    ],
+  ];
+
+  $schema['bead_files'] = [
+    'description' => 'Saves files for a project.',
+    'fields' => [
+      'file_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Unique id for a file.',
+      ],
+      'directory_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A directory_id',
+      ],
+      'filename' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The filename in the project.',
+      ],
+    ],
+    'primary key' => ['file_id'],
+    'indexes' => [
+      'file_id_directory_id' => ['file_id', 'directory_id'],
+      'directory_id' => ['directory_id'],
+      'directory_id_filename' => ['directory_id', 'filename'],
+    ],
+  ];
+
+  $schema['bead_constant_decl'] = [
+    'description' => 'Stores constant definitions.',
+    'fields' => [
+      'constant_decl_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Unique id for a constant.',
+      ],
+      'file_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A file_id',
+      ],
+      'lineno' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A file_id',
+      ],
+      'name' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The name of the constant.',
+      ],
+    ],
+    'primary key' => ['constant_decl_id'],
+    'indexes' => [
+      'name' => ['name'],
+      'file_id' => ['file_id'],
+    ],
+  ];
+
+  $schema['bead_constant_ref'] = [
+    'description' => 'References to the use of constants.',
+    'fields' => [
+      'constant_ref_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Unique id for a constant reference.',
+      ],
+      'constant_decl_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A reference to a constant.',
+      ],
+      'file_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A file_id',
+      ],
+      'lineno' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A file_id',
+      ],
+    ],
+    'primary key' => ['constant_ref_id'],
+    'indexes' => [
+      'constant_decl_id' => ['constant_decl_id'],
+    ],
+  ];
+
+  $schema['bead_function_decl'] = [
+    'description' => 'Function definitions.',
+    'fields' => [
+      'function_decl_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'A unique function id.',
+      ],
+      'file_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A file_id',
+      ],
+      'lineno' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A line number.',
+      ],
+      'name' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The name of the function.',
+      ],
+      'docblock' => [
+        'type' => 'text',
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'The docblock for the function.',
+      ],
+    ],
+    'primary key' => ['function_decl_id'],
+    'indexes' => [
+      'file_id' => ['file_id'],
+      'name' => ['name'],
+      'file_id_name' => ['file_id', 'name'],
+    ],
+  ];
+
+  $schema['bead_function_ref'] = [
+    'description' => 'Function references.',
+    'fields' => [
+      'function_ref_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'A unique function ref id.',
+      ],
+      'file_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A file_id',
+      ],
+      'lineno' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A line number.',
+      ],
+      'function_decl_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A function decl id.',
+      ],
+    ],
+    'primary key' => ['function_ref_id'],
+    'indexes' => [
+      'file_id' => ['file_id'],
+      'function_ref_id_file_id_name' => ['function_ref_id', 'file_id'],
+    ],
+  ];
+
+  $schema['bead_function_decl_param'] = [
+    'description' => 'Function parameter definitions.',
+    'fields' => [
+      'function_decl_param_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'A unique function id.',
+      ],
+      'name' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The name of the function.',
+      ],
+      'constant_decl_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A constant decl id.',
+      ],
+      'function_decl_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'A constant decl id.',
+      ],
+
+    ],
+    'primary key' => ['function_decl_param_id'],
+    'indexes' => [
+      'name' => ['name'],
+      'constant_decl_id' => ['constant_decl_id'],
+      'function_decl_id' => ['function_decl_id'],
+      'function_decl_param_id_function_decl_id' => ['function_decl_param_id', 'function_decl_id'],
+      'name_function_decl_id' => ['name', 'function_decl_id'],
+      'name_constant_decl_id_function_decl_id' => ['name', 'constant_decl_id', 'function_decl_id'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function bead_install() {
+  // Create project types
+  bead_project_type_create('PHP');
+  bead_project_type_create('Drupal 7');
+  bead_project_type_create('Drupal 8');
+
+  // Create PHP constant types
+  $php_constants = 'CURLAUTH_ANY
+CURLAUTH_ANYSAFE
+CURLAUTH_BASIC
+CURLAUTH_DIGEST
+CURLAUTH_GSSNEGOTIATE
+CURLAUTH_NTLM
+CURLINFO_EFFECTIVE_URL
+CURLINFO_HTTP_CODE
+CURLOPT_COOKIEJAR
+CURLOPT_FOLLOWLOCATION
+CURLOPT_HEADERFUNCTION
+CURLOPT_HTTPAUTH
+CURLOPT_HTTPGET
+CURLOPT_HTTPHEADER
+CURLOPT_NOBODY
+CURLOPT_POST
+CURLOPT_POSTFIELDS
+CURLOPT_RETURNTRANSFER
+CURLOPT_SSL_VERIFYHOST
+CURLOPT_SSL_VERIFYPEER
+CURLOPT_URL
+CURLOPT_USERAGENT
+CURLOPT_USERPWD
+DATE_RFC2822
+DEBUG_BACKTRACE_IGNORE_ARGS
+DIRECTORY_SEPARATOR
+ENT_QUOTES
+EXTR_SKIP
+E_ALL
+E_COMPILE_ERROR
+E_COMPILE_WARNING
+E_CORE_ERROR
+E_CORE_WARNING
+E_DEPRECATED
+E_ERROR
+E_NOTICE
+E_PARSE
+E_RECOVERABLE_ERROR
+E_STRICT
+E_USER_DEPRECATED
+E_USER_ERROR
+E_USER_NOTICE
+E_USER_WARNING
+E_WARNING
+FALSE
+FIELD_QUERY_COMPLETE
+FIELD_QUERY_NO_LIMIT
+FILEINFO_MIME_TYPE
+FILE_APPEND
+FILTER_FLAG_NO_RES_RANGE
+FILTER_VALIDATE_EMAIL
+FILTER_VALIDATE_IP
+FORCE_GZIP
+FTP_BINARY
+IMG_FILTER_GRAYSCALE
+JSON_HEX_AMP
+JSON_HEX_APOS
+JSON_HEX_QUOT
+JSON_HEX_TAG
+LC_ALL
+LOCK_EX
+LOCK_NB
+LOCK_SH
+LOCK_UN
+LOG_LOCAL0
+LOG_LOCAL1
+LOG_LOCAL2
+LOG_LOCAL3
+LOG_LOCAL4
+LOG_LOCAL5
+LOG_LOCAL6
+LOG_LOCAL7
+LOG_NDELAY
+LOG_USER
+NULL
+PATHINFO_EXTENSION
+PATHINFO_FILENAME
+PHP_INT_MAX
+PHP_OS
+PHP_URL_HOST
+PHP_URL_SCHEME
+PHP_VERSION
+PHP_VERSION_ID
+PREG_NO_ERROR
+PREG_OFFSET_CAPTURE
+PREG_SET_ORDER
+PREG_SPLIT_DELIM_CAPTURE
+PREG_SPLIT_NO_EMPTY
+PREG_SPLIT_OFFSET_CAPTURE
+SEEK_CUR
+SEEK_SET
+SORT_NUMERIC
+SORT_STRING
+STREAM_CLIENT_CONNECT
+STREAM_IS_URL
+STREAM_META_ACCESS
+STREAM_META_GROUP
+STREAM_META_GROUP_NAME
+STREAM_META_OWNER
+STREAM_META_OWNER_NAME
+STREAM_META_TOUCH
+STREAM_MKDIR_RECURSIVE
+STREAM_OPTION_BLOCKING
+STREAM_OPTION_READ_TIMEOUT
+STREAM_OPTION_WRITE_BUFFER
+STREAM_REPORT_ERRORS
+STREAM_URL_STAT_QUIET
+STREAM_USE_PATH
+STR_PAD_LEFT
+TRUE
+UPLOAD_ERR_FORM_SIZE
+UPLOAD_ERR_INI_SIZE
+UPLOAD_ERR_NO_FILE
+UPLOAD_ERR_OK
+UPLOAD_ERR_PARTIAL
+XML_OPTION_CASE_FOLDING
+XML_OPTION_TARGET_ENCODING
+';
+
+  $parts = explode("\n", $php_constants);
+  foreach ($parts as $php_constant) {
+    if (!empty(trim($php_constant))) {
+      bead_constant_decl_create(0, 0, trim($php_constant));
+    }
+  }
+
+  // Predefined functions (built-in PHP or library provided)
+  $php_functions = 'abs
+action_form
+action_id
+action_ids
+addcslashes
+apc_delete_file
+apc_fetch
+array_combine
+array_diff
+array_diff_assoc
+array_diff_key
+array_fill
+array_fill_keys
+array_filter
+array_flip
+array_intersect
+array_intersect_key
+array_keys
+array_key_exists
+array_map
+array_merge
+array_merge_recursive
+array_multisort
+array_pad
+array_pop
+array_reduce
+array_reverse
+array_search
+array_shift
+array_slice
+array_splice
+array_sum
+array_unique
+array_unshift
+array_values
+array_walk
+arsort
+asort
+base64_decode
+base64_encode
+basename
+base_convert
+bcadd
+bccomp
+bcdiv
+bcmod
+bcmul
+bcpow
+bcpowmod
+bzclose
+bzopen
+bzread
+bzwrite
+callback
+call_user_func
+call_user_func_array
+casing
+ceil
+chdir
+check
+checkdate
+chgrp
+chmod
+chown
+chr
+class_exists
+class_implements
+clearstatcache
+closedir
+column_callback
+config
+constant
+contextual_links_view
+copy
+count
+curl_close
+curl_exec
+curl_file_create
+curl_getinfo
+curl_init
+curl_setopt
+curl_setopt_array
+current
+date
+date_create
+date_default_timezone_get
+date_default_timezone_set
+date_format
+date_timezone_set
+db_check_setup
+db_fetch_array
+debug_backtrace
+dechex
+DecOct
+defined
+delivery_callback
+dir
+dirname
+dl
+drupal_session_will_start
+end
+error_reporting
+escapeshellarg
+escapeshellcmd
+example_notifications_optin
+explode
+extension_function
+extension_loaded
+extract
+fclose
+feof
+fflush
+fgets
+file
+filectime
+fileinode
+filemtime
+fileowner
+fileperms
+filesize
+file_exists
+file_get_contents
+file_put_contents
+filter_var
+floatval
+flock
+floor
+fmod
+fopen
+fputs
+fread
+fseek
+fstat
+ftell
+ftp_cdup
+ftp_chdir
+ftp_connect
+ftp_delete
+ftp_login
+ftp_mkdir
+ftp_nlist
+ftp_put
+ftp_pwd
+ftp_rmdir
+ftp_site
+ftp_size
+ftruncate
+function
+function_exists
+func_get_args
+func_num_args
+fwrite
+gd_info
+getcwd
+getimagesize
+getmypid
+gettype
+get_cfg_var
+get_class
+get_class_methods
+get_defined_functions
+get_object_vars
+gmdate
+gmmktime
+gmp_add
+gmp_cmp
+gmp_div
+gmp_mod
+gmp_mul
+gmp_pow
+gmp_powm
+gmp_strval
+gzclose
+gzencode
+gzeof
+gzinflate
+gzopen64
+gzputs
+gzread
+gzseek64
+gztell64
+hash
+hash_file
+hash_hmac
+header
+headers_sent
+hexdec
+highlight_string
+htmlspecialchars
+html_entity_decode
+iconv
+ignore_user_abort
+imagealphablending
+imagecolorallocate
+imagecolorallocatealpha
+imagecolorexactalpha
+imagecolorsforindex
+imagecolorstotal
+imagecolortransparent
+imagecopy
+imagecopyresampled
+imagecreatefrompng
+imagecreatetruecolor
+imagedestroy
+imagefill
+imagefilledrectangle
+imagefilter
+imageistruecolor
+imagepng
+imagerotate
+imagesavealpha
+imagesx
+imagesy
+implode
+ini_get
+ini_set
+interface_exists
+intval
+in_array
+is_array
+is_bool
+is_callable
+is_dir
+is_double
+is_executable
+is_file
+is_float
+is_int
+is_integer
+is_link
+is_null
+is_numeric
+is_object
+is_readable
+is_resource
+is_scalar
+is_string
+is_uploaded_file
+is_writable
+is_writeable
+join
+json_decode
+json_encode
+key
+krsort
+ksort
+libxml_disable_entity_loader
+log10
+lstat
+ltrim
+mail
+max
+mb_convert_encoding
+mb_internal_encoding
+mb_language
+mb_strlen
+mb_strtolower
+mb_strtoupper
+mb_substr
+md5
+memory_get_usage
+method
+method_exists
+microtime
+min
+mkdir
+move_uploaded_file
+mt_getrandmax
+mt_rand
+mt_srand
+mymodule_add_something
+mymodule_cache_rebuild
+mymodule_canonical_url
+mymodule_disable_functionality
+mymodule_enable_functionality
+mymodule_fetch
+mymodule_get_user_nodes
+mymodule_parse
+mymodule_prepare_something
+mymodule_remove_items
+mymodule_remove_mydata
+mymodule_save
+my_module_entity_additions
+natcasesort
+next
+nl2br
+number_format
+ob_end_clean
+ob_flush
+ob_get_clean
+ob_get_contents
+ob_get_level
+ob_start
+OctDec
+opcache_get_status
+opcache_invalidate
+opcache_reset
+opendir
+openlog
+openssl_random_pseudo_bytes
+ord
+override_function
+pack
+parse_str
+parse_url
+pathinfo
+phpinfo
+phpversion
+php_sapi_name
+posix_getgrgid
+posix_getpwuid
+pow
+preg_grep
+preg_last_error
+preg_match
+preg_match_all
+preg_quote
+preg_replace
+preg_replace_callback
+preg_split
+prev
+print_r
+process
+processor_function
+property_exists
+quoted_printable_decode
+rand
+range
+rawurldecode
+rawurlencode
+readdir
+readfile
+readlink
+realpath
+recode_string
+register_shutdown_function
+rename
+render_function
+reset
+restore_error_handler
+rewind
+rewinddir
+rmdir
+round
+rsort
+rtrim
+scandir
+serialize
+session_destroy
+session_get_cookie_params
+session_id
+session_name
+session_set_save_handler
+session_start
+session_write_close
+setcookie
+setlocale
+setrawcookie
+set_error_handler
+set_exception_handler
+set_time_limit
+sha1
+shuffle
+simplexml_import_dom
+sizeof
+sleep
+sort
+spl_autoload_register
+sprintf
+sqrt
+ssh2_auth_password
+ssh2_connect
+ssh2_exec
+ssh2_scp_send
+stat
+strcasecmp
+strcmp
+strcspn
+stream_get_meta_data
+stream_get_wrappers
+stream_set_timeout
+stream_socket_client
+stream_wrapper_register
+stream_wrapper_restore
+stream_wrapper_unregister
+stripcslashes
+stripos
+stripslashes
+strip_tags
+stristr
+strlen
+strnatcasecmp
+strnatcmp
+strncmp
+strpos
+strrev
+strrpos
+strstr
+strtok
+strtolower
+strtotime
+strtoupper
+strtr
+strval
+str_pad
+str_repeat
+str_replace
+str_split
+str_word_count
+submit_function
+substr
+substr_count
+substr_replace
+symlink
+syslog
+sys_get_temp_dir
+tablename_function
+tempnam
+time
+timezone_identifiers_list
+timezone_name_from_abbr
+timezone_open
+touch
+trait_exists
+trigger_error
+trim
+uasort
+uksort
+umask
+uniqid
+unlink
+unpack
+unserialize
+uploadprogress_get_info
+uri_callback
+urldecode
+urlencode
+usleep
+usort
+uuid_uuid
+value_callback
+var_export
+version_compare
+wordwrap
+xml_error_string
+xml_get_current_line_number
+xml_get_error_code
+xml_parse
+xml_parser_create
+xml_parser_free
+xml_parser_set_option
+xml_parse_into_struct
+xml_set_character_data_handler
+xml_set_element_handler
+xzclose
+xzopen
+xzread
+xzwrite
+_mymodule_store_ax_fields
+_update_get_project_type';
+
+  $parts = explode("\n", $php_functions);
+  foreach ($parts as $php_function) {
+    if (!empty(trim($php_function))) {
+      bead_function_decl_create(0, 0, trim($php_function), '/** Built in function or library provided function */');
+    }
+  }
+
+
+  bead_project_create(2, 'D7 Analysis', '/user/Work/drupal_analyzer/drupal-7.67');
+}

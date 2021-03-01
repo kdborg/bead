@@ -1,0 +1,4 @@
+name: Bead
+description: A way to analyze projects.
+type: module
+core: 8.x

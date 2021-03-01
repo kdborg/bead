@@ -1,0 +1,445 @@
+<?php
+
+/**
+ * Add a project type to the database.
+ *
+ * @param $name
+ *
+ * @return bool|\Drupal\Core\Database\StatementInterface|int|null
+ */
+function bead_project_type_create($name) {
+  $project_type_id = FALSE;
+
+  try {
+    $project_type_id = \Drupal::database()->insert('bead_project_type')
+      ->fields(['name' => $name])
+      ->execute();
+  } catch (Exception $e) {
+
+  }
+  return $project_type_id;
+}
+
+/**
+ * Get all project types.
+ *
+ * @return array
+ */
+function bead_project_type_get_types() {
+  $results = \Drupal::database()->select('bead_project_type', 'pt')
+    ->fields('pt', ['project_type_id', 'name'])
+    ->execute();
+
+  $data = [];
+  foreach ($results as $row) {
+    $data[$row->project_type_id] = $row->name;
+  }
+
+  return $data;
+}
+
+/**
+ * Create a project.
+ *
+ * @param int $project_type_id
+ * @param string $name
+ * @param string $directory
+ *
+ * @return bool|\Drupal\Core\Database\StatementInterface|int|null
+ */
+function bead_project_create(int $project_type_id, string $name, string $directory) {
+  $project_id = FALSE;
+
+  try {
+    $project_id = \Drupal::database()->insert('bead_project')
+      ->fields([
+        'project_type_id' => $project_type_id,
+        'name' => $name,
+        'directory' => $directory,
+      ])
+      ->execute();
+  } catch (Exception $e) {
+    $project_id = FALSE;
+  }
+
+  return $project_id;
+}
+
+/**
+ * Return a list of all projects.
+ *
+ * @return array
+ */
+function bead_project_get_projects() {
+  $results = \Drupal::database()->select('bead_project', 'p')
+    ->fields('p', ['project_id', 'project_type_id', 'name', 'directory'])
+    ->execute();
+
+  $data = [];
+  foreach ($results as $row) {
+    $data[$row->project_id] = [
+      'project_type_id' => $row->project_type_id,
+      'name' => $row->name,
+      'directory' => $row->directory,
+    ];
+  }
+
+  return $data;
+}
+
+/**
+ * Get an individual project.
+ *
+ * @param int $project_id
+ *
+ * @return array
+ */
+function bead_project_get(int $project_id) {
+  $results = \Drupal::database()->select('bead_project', 'p')
+    ->fields('p', ['project_id', 'project_type_id', 'name', 'directory'])
+    ->condition('project_id', $project_id)
+    ->execute();
+
+  $data = [];
+  foreach ($results as $row) {
+    $data[$row->project_id] = [
+      'project_type_id' => $row->project_type_id,
+      'name' => $row->name,
+      'directory' => $row->directory,
+    ];
+  }
+
+  if (!empty($data[$project_id])) {
+    return $data[$project_id];
+  }
+
+  return [];
+}
+
+/**
+ * Create a directory.
+ *
+ * @param int $project_id
+ * @param string $base_dir
+ * @param string $directory
+ *
+ * @return bool|\Drupal\Core\Database\StatementInterface|int|null
+ */
+function bead_directory_create(int $project_id, string $base_dir, string $directory) {
+  $directory_id = FALSE;
+
+  try {
+    $directory = str_replace($base_dir, '', $directory);
+    if ($directory === '/') { $directory = ''; }
+    $directory_id = \Drupal::database()->insert('bead_directories')
+      ->fields([
+        'project_id' => $project_id,
+        'directory' => $directory,
+      ])
+      ->execute();
+  } catch (Exception $e) {
+    $directory_id = FALSE;
+  }
+
+  return $directory_id;
+}
+
+/**
+ * See if a directory was already created for this project.
+ *
+ * @param int $project_id
+ * @param string $base_dir
+ * @param string $directory
+ *
+ * @return bool
+ */
+function bead_directory_get_id(int $project_id, string $base_dir, string $directory) {
+  $directory = str_replace($base_dir, '', $directory);
+  if ($directory === '/') { $directory = ''; }
+
+  $result = \Drupal::database()->select('bead_directories', 'dad')
+    ->fields('dad', ['directory_id'])
+    ->condition('project_id', $project_id)
+    ->condition('directory', $directory)
+    ->execute()->fetchCol();
+
+  if (!empty($result)) {
+    return $result[0];
+  } else {
+    return FALSE;
+  }
+}
+
+/**
+ * Get directories for a project.
+ *
+ * @param int $project_id
+ *
+ * @return array
+ */
+function bead_directory_get_project(int $project_id) {
+  $results = \Drupal::database()->select('bead_directories', 'd')
+    ->fields('d', ['directory_id', 'project_id', 'directory'])
+    ->condition('project_id', $project_id)
+    ->execute();
+
+  $data = [];
+  foreach ($results as $row) {
+    $data[$row->directory_id] = [
+      'project_id' => $row->project_id,
+      'directory' => $row->directory,
+    ];
+  }
+
+  return $data;
+}
+
+/**
+ * Create a file.
+ *
+ * @param int $directory_id
+ * @param string $filename
+ *
+ * @return bool|\Drupal\Core\Database\StatementInterface|int|null
+ */
+function bead_file_create(int $directory_id, string $filename) {
+  $file_id = FALSE;
+
+  try {
+    $file_id = \Drupal::database()->insert('bead_files')
+      ->fields([
+        'directory_id' => $directory_id,
+        'filename' => $filename,
+      ])
+      ->execute();
+  } catch (Exception $e) {
+    $file_id = FALSE;
+  }
+
+  return $file_id;
+}
+
+function bead_file_get_id(int $directory_id, string $filename) {
+
+  $result = \Drupal::database()->select('bead_files', 'daf')
+    ->fields('daf', ['directory_id'])
+    ->condition('directory_id', $directory_id)
+    ->condition('filename', $filename)
+    ->execute()->fetchCol();
+
+  if (!empty($result)) {
+    return $result[0];
+  } else {
+    return FALSE;
+  }
+}
+
+/**
+ * @param int $file_id
+ * @param int $lineno
+ * @param string $name
+ *
+ * @return bool|\Drupal\Core\Database\StatementInterface|int|null
+ */
+function bead_constant_decl_create(int $file_id, int $lineno, string $name) {
+  $constant_decl_id = FALSE;
+
+  try {
+    $result = \Drupal::database()->select('bead_constant_decl', 'dcd')
+      ->fields('dcd', ['constant_decl_id', 'file_id', 'lineno', 'name'])
+      ->condition('file_id', 0)
+      ->condition('lineno', 1)
+      ->condition('name', $name)
+      ->execute()->fetchAll();
+
+    if (!empty($result)) {
+      $constant_decl_id = $result[0]->constant_decl_id;
+
+      $updated = \Drupal::database()->update('bead_constant_decl')
+        ->fields([
+          'file_id' => $file_id,
+          'lineno' => $lineno,
+        ])
+        ->condition('constant_decl_id', $constant_decl_id)
+        ->execute();
+
+    } else {
+
+      $constant_decl_id = \Drupal::database()->insert('bead_constant_decl')
+        ->fields([
+          'file_id' => $file_id,
+          'lineno' => $lineno,
+          'name' => $name,
+        ])
+        ->execute();
+    }
+  } catch (Exception $e) {
+    print 'Creation of constant_decl error for ' . $name . ': ' . $e->getMessage() . PHP_EOL;
+    $constant_decl_id = FALSE;
+  }
+
+  return $constant_decl_id;
+}
+
+/**
+ * Get a constant definition id based on the name.
+ *
+ * @param string $name
+ *
+ * @return bool|int
+ */
+function bead_constant_decl_get_id(string $name) {
+    $result = \Drupal::database()->select('bead_constant_decl', 'dcd')
+    ->fields('dcd', ['constant_decl_id'])
+    ->condition('name', $name)
+    ->execute()->fetchCol();
+
+  if (!empty($result)) {
+    return $result[0];
+  }
+  return FALSE;
+}
+
+/**
+ * Create a reference to a constant.
+ *
+ * @param int $file_id
+ * @param int $lineno
+ * @param int $constant_decl_id
+ *
+ * @return bool|int
+ */
+function bead_constant_ref_create(int $file_id, int $lineno, int $constant_decl_id) {
+  $constant_ref_id = FALSE;
+  try {
+    $constant_ref_id = \Drupal::database()->insert('bead_constant_ref')
+      ->fields([
+        'file_id' => $file_id,
+        'lineno' => $lineno,
+        'constant_decl_id' => $constant_decl_id,
+      ])
+      ->execute();
+  } catch (Exception $e) {
+    print '****ERROR: ' . $e->getMessage() . PHP_EOL;
+    $constant_decl_id = FALSE;
+  }
+
+  return $constant_decl_id;
+}
+
+/**
+ * Create a function declaration.
+ *
+ * @param int $file_id
+ * @param int $lineno
+ * @param string $name
+ * @param string $docblock
+ *
+ * @return bool|\Drupal\Core\Database\StatementInterface|int|null
+ */
+function bead_function_decl_create(int $file_id, int $lineno, string $name, string $docblock) {
+  $function_decl_id = FALSE;
+
+  try {
+    $result = \Drupal::database()->select('bead_function_decl', 'dcd')
+      ->fields('dcd', ['function_decl_id', 'file_id', 'lineno', 'name'])
+      ->condition('file_id', 0)
+      ->condition('lineno', 1)
+      ->condition('name', $name)
+      ->execute()->fetchAll();
+
+    if (!empty($result)) {
+      $function_decl_id = $result[0]->function_decl_id;
+
+      $updated = \Drupal::database()->update('bead_function_decl')
+        ->fields([
+          'file_id' => $file_id,
+          'lineno' => $lineno,
+        ])
+        ->condition('function_decl_id', $function_decl_id)
+        ->execute();
+
+    } else {
+
+      $function_decl_id = \Drupal::database()->insert('bead_function_decl')
+        ->fields([
+          'file_id' => $file_id,
+          'lineno' => $lineno,
+          'name' => $name,
+          'docblock' => $docblock,
+        ])
+        ->execute();
+    }
+  } catch (Exception $e) {
+    print 'Creation of function_decl error for ' . $name . ': ' . $e->getMessage() . PHP_EOL;
+    $function_decl_id = FALSE;
+  }
+
+  return $function_decl_id;
+}
+
+/**
+ * Create a function reference.
+ *
+ * @param int $file_id
+ * @param int $lineno
+ * @param int $function_decl_id
+ *
+ * @return bool|int
+ */
+function bead_function_ref_create(int $file_id, int $lineno, int $function_decl_id) {
+  $function_ref_id = FALSE;
+  try {
+    $function_ref_id = \Drupal::database()->insert('bead_function_ref')
+      ->fields([
+        'file_id' => $file_id,
+        'lineno' => $lineno,
+        'function_decl_id' => $function_decl_id,
+      ])
+      ->execute();
+  } catch (Exception $e) {
+    print '****ERROR: ' . $e->getMessage() . PHP_EOL;
+    $function_decl_id = FALSE;
+  }
+
+  return $function_decl_id;
+}
+
+function bead_function_decl_id_get($name) {
+  $result = \Drupal::database()->select('bead_function_decl', 'dcd')
+    ->fields('dcd', ['function_decl_id'])
+    ->condition('name', $name)
+    ->execute()->fetchCol();
+
+  if (!empty($result)) {
+    return $result[0];
+  }
+  return FALSE;
+}
+
+/**
+ * Create a function decl parameter.
+ *
+ * @param string $name
+ * @param int $constant_decl_id
+ * @param int $function_decl_id
+ *
+ * @return bool|\Drupal\Core\Database\StatementInterface|int|null
+ */
+function bead_function_decl_param_create(string $name, int $constant_decl_id, int $function_decl_id) {
+  $function_decl_param_id = FALSE;
+  try {
+    $function_decl_param_id = \Drupal::database()->insert('bead_function_decl_param')
+      ->fields([
+        'name' => $name,
+        'constant_decl_id' => $constant_decl_id,
+        'function_decl_id' => $function_decl_id,
+      ])
+      ->execute();
+  } catch (Exception $e) {
+    print '****ERROR: ' . $e->getMessage() . PHP_EOL;
+    $function_decl_param_id = FALSE;
+  }
+
+  return $function_decl_param_id;
+}
